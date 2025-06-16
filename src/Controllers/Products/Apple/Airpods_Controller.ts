@@ -1,6 +1,8 @@
 import { sql } from "../../../Config/ConnectDB.js";
+import {v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import supabaseClient from "../../../Config/SupaConnect.js";
+import { Airpods_Types } from "../../../Types/all_types.js";
 
 const MIME_TYPES: Record<string, string> = {
     "image/png": "png",
@@ -15,9 +17,11 @@ const generateFileName = (originalName: string, mimetype: string): string => {
 
 export const AddAirPods = async (req: Request, res: Response): Promise <Response |void> => {
   let filename = "";
+  const random_id = uuidv4();
+  console.log("Random ID:", random_id);
   try {
-    const { airpods_name, airpods_mark, airpods_type, airpods_model, airpods_voice_isolation, airpods_active_noise_cancellation, airpods_listening_time, airpods_conversation_time, airpods_listening_time_anc, airpods_conversation_time_anc, airpods_bluetooth_version, airpods_price, airpods_discount, airpods_price_discount } = req.body;
-    if (!airpods_name || !airpods_mark || !airpods_type || !airpods_model || !airpods_voice_isolation || !airpods_active_noise_cancellation || !airpods_listening_time || !airpods_conversation_time || !airpods_listening_time_anc || !airpods_conversation_time_anc || !airpods_bluetooth_version || !airpods_price) {
+    const { airpods_name, airpods_mark, airpods_type, airpods_model, airpods_voice_isolation, airpods_active_noise_cancellation, airpods_listening_time, airpods_conversation_time, airpods_listening_time_anc, airpods_conversation_time_anc, airpods_bluetooth_version, airpods_price, airpods_discount, airpods_price_discount, airpods_release_date } = req.body as Airpods_Types;
+    if (!random_id || !airpods_name || !airpods_mark || !airpods_type || !airpods_model || !airpods_voice_isolation || !airpods_active_noise_cancellation || !airpods_listening_time || !airpods_conversation_time || !airpods_listening_time_anc || !airpods_conversation_time_anc || !airpods_bluetooth_version || !airpods_price || !airpods_release_date) {
       console.log("Body:" ,req.body);
       return res.status(400).json({ ErrorMsg: "Veuillez remplir tous les champs !" });
     }
@@ -60,8 +64,8 @@ export const AddAirPods = async (req: Request, res: Response): Promise <Response
     
 
     const NewAirPods = await sql`
-      insert into ipods (airpods_name, product_picture, airpods_mark, airpods_type, airpods_model, airpods_voice_isolation, airpods_active_noise_cancellation, airpods_listening_time, airpods_conversation_time, airpods_listening_time_anc, airpods_conversation_time_anc, airpods_bluetooth_version, airpods_price, airpods_discount, airpods_price_discount)
-      values (${airpods_name}, ${pictureUrl}, ${airpods_mark}, ${airpods_type}, ${airpods_model}, ${airpods_voice_isolation}, ${airpods_active_noise_cancellation}, ${airpods_listening_time}, ${airpods_conversation_time}, ${airpods_listening_time_anc}, ${airpods_conversation_time_anc}, ${airpods_bluetooth_version}, ${Number(airpods_price)}, ${airpods_discount}, ${discountPrice})
+      insert into ipods (public_id, airpods_name, product_picture, airpods_mark, airpods_type, airpods_model, airpods_voice_isolation, airpods_active_noise_cancellation, airpods_listening_time, airpods_conversation_time, airpods_listening_time_anc, airpods_conversation_time_anc, airpods_bluetooth_version, airpods_price, airpods_discount, airpods_price_discount, airpods_release_date)
+      values (${random_id}, ${airpods_name}, ${pictureUrl}, ${airpods_mark}, ${airpods_type}, ${airpods_model}, ${airpods_voice_isolation}, ${airpods_active_noise_cancellation}, ${airpods_listening_time}, ${airpods_conversation_time}, ${airpods_listening_time_anc}, ${airpods_conversation_time_anc}, ${airpods_bluetooth_version}, ${Number(airpods_price)}, ${airpods_discount}, ${discountPrice}, ${airpods_release_date})
       returning *
     `;
     console.log("new Airpods :", NewAirPods);
@@ -91,7 +95,8 @@ export const GetAllAirpods = async (req: Request, res: Response): Promise <Respo
     if(allAirpods.length === 0) {
       return res.status(404).json({ ErrorMsg: "Aucun Airpods trouvé !" });
     }
-    return res.status(200).json(allAirpods);
+    const airpodsWithoutId = allAirpods.map(({ airpods_id, ...rest }) => rest);
+    return res.status(200).json(airpodsWithoutId);
   } catch (error) {
     console.error("GetAllAirpods Error:", error);
     return res.status(500).json({ ErrorMsg: "Server error" });
@@ -101,17 +106,19 @@ export const GetAllAirpods = async (req: Request, res: Response): Promise <Respo
 export const GetAirpodsById = async (req: Request, res: Response): Promise <Response | void> => {
   try {
     const { id } = req.params;
-    const receivedId = Number(id);
-    if (isNaN(receivedId)) {
-      return res.status(400).json({ ErrorMsg: "Invalid phone ID" });
+    const receivedId = id;
+    if (!receivedId) {
+      return res.status(400).json({ ErrorMsg: "Invalid Airpods ID" });
     }
-    const item = await sql`select * from ipods where airpods_id = ${receivedId}`;
+    const item = await sql`select * from ipods where public_id = ${receivedId}`;
     if (item.length === 0) {
       return res.status(404).json({ ErrorMsg: "Airpods not found" });
     }
-    return res.status(200).json(item[0]);
+    const receivedItem = item[0];
+    const { airpods_id, ...rest } = receivedItem;
+    return res.status(200).json(rest);
   } catch (error) {
-    console.error("GetPhoneById Error:", error);
+    console.error("GetAirpodsById Error:", error);
     return res.status(500).json({ ErrorMsg: "Server error" });
   }
 }

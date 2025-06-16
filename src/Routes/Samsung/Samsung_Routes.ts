@@ -4,25 +4,25 @@ import { AddGalaxyPhone, GetAllPhones, GetPhoneById } from "../../Controllers/Pr
 import { AddGalaxyTab, GetAllGalaxyTabs, GetGalaxyTabById } from "../../Controllers/Products/Samsung/galaxy_Tab_Controller.js";
 import { AddGalaxyBook, GetAllGalaxyBooks, GetGalaxyBooksById } from "../../Controllers/Products/Samsung/galaxy_book_Controller.js";
 import { AddGalaxyBuds, GetAllBuds, GetBudsById } from "../../Controllers/Products/Samsung/galaxy_Buds_Controller.js";
-import { AddSamsungAccessories, GetAllSamsungAccessories, GetSamsungAccessoriesById } from "../../Controllers/Products/Samsung/galaxy_Accessories_Controller.js";
+import { AddSamsungAccessories, GetAllSamsungAccessories, GetSamsungAccessoriesById, GetSamsungAccessoriesByQuery } from "../../Controllers/Products/Samsung/galaxy_Accessories_Controller.js";
 import { cookies_Auth } from "../../Middlewares/authCookies.js";
 const router = Router();
 
-router.post("/add/phone", upload, cookies_Auth, async(req: Request, res: Response) => {
+router.post("/add/phone", upload, async(req: Request, res: Response) => {
   await AddGalaxyPhone(req, res);
 })
 
-router.post("/add/tablet", upload, cookies_Auth, async(req: Request, res: Response) => {
+router.post("/add/tablet", upload, async(req: Request, res: Response) => {
   await AddGalaxyTab(req, res);
 })
 
-router.post("/add/computer", upload, cookies_Auth, async(req: Request, res: Response) => {
+router.post("/add/computer", upload, async(req: Request, res: Response) => {
   await AddGalaxyBook(req, res);
 })
-router.post("/add/buds", upload, cookies_Auth, async(req: Request, res: Response) => {
+router.post("/add/buds", upload, async(req: Request, res: Response) => {
   await AddGalaxyBuds(req, res);
 })
-router.post("/add/accessories", upload, cookies_Auth, async(req: Request, res: Response) => {
+router.post("/add/accessories", upload, async(req: Request, res: Response) => {
   await AddSamsungAccessories(req, res);
 })
 
@@ -44,10 +44,10 @@ router.get("/computer", async (req: Request, res: Response) => {
 router.get("/computer/:id", async (req: Request, res: Response) => {
   await GetGalaxyBooksById(req, res);
 });
-router.get("/airpods", async (req: Request, res: Response) => {
+router.get("/buds", async (req: Request, res: Response) => {
   await GetAllBuds(req, res);
 });
-router.get("/airpods/:id", async (req: Request, res: Response) => {
+router.get("/buds/:id", async (req: Request, res: Response) => {
   await GetBudsById(req, res);
 });
 router.get("/accessories", async (req: Request, res: Response) => {
@@ -55,6 +55,9 @@ router.get("/accessories", async (req: Request, res: Response) => {
 });
 router.get("/accessories/:id", async (req: Request, res: Response) => {
   await GetSamsungAccessoriesById(req, res);
+});
+router.get("/queriedaccessories", async (req: Request, res: Response) => {
+  await GetSamsungAccessoriesByQuery(req, res);
 });
 
 export default router;

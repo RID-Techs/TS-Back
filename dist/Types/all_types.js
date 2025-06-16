@@ -1,0 +1,2 @@
+// Apple Devices Types
+export {};

@@ -1,4 +1,5 @@
 import { sql } from "../../../Config/ConnectDB.js";
+import { v4 as uuidv4 } from "uuid";
 import supabaseClient from "../../../Config/SupaConnect.js";
 const MIME_TYPES = {
     "image/png": "png",
@@ -12,9 +13,11 @@ const generateFileName = (originalName, mimetype) => {
 };
 export const AddGalaxyBuds = async (req, res) => {
     let filename = "";
+    const random_id = uuidv4();
+    console.log("Random ID:", random_id);
     try {
-        const { galaxybuds_name, galaxybuds_mark, galaxybuds_type, galaxybuds_model, galaxybuds_voice_isolation, galaxybuds_active_noise_cancellation, galaxybuds_listening_time, galaxybuds_conversation_time, galaxybuds_listening_time_anc, galaxybuds_conversation_time_anc, galaxybuds_bluetooth_version, galaxybuds_price, galaxybuds_discount, galaxybuds_price_discount } = req.body;
-        if (!galaxybuds_name || !galaxybuds_mark || !galaxybuds_type || !galaxybuds_model || !galaxybuds_voice_isolation || !galaxybuds_active_noise_cancellation || !galaxybuds_listening_time || !galaxybuds_conversation_time || !galaxybuds_listening_time_anc || !galaxybuds_conversation_time_anc || !galaxybuds_bluetooth_version || !galaxybuds_price) {
+        const { galaxybuds_name, galaxybuds_mark, galaxybuds_type, galaxybuds_model, galaxybuds_voice_isolation, galaxybuds_active_noise_cancellation, galaxybuds_listening_time, galaxybuds_conversation_time, galaxybuds_listening_time_anc, galaxybuds_conversation_time_anc, galaxybuds_bluetooth_version, galaxybuds_price, galaxybuds_discount, galaxybuds_price_discount, galaxybuds_release_date } = req.body;
+        if (!random_id || !galaxybuds_name || !galaxybuds_mark || !galaxybuds_type || !galaxybuds_model || !galaxybuds_voice_isolation || !galaxybuds_active_noise_cancellation || !galaxybuds_listening_time || !galaxybuds_conversation_time || !galaxybuds_listening_time_anc || !galaxybuds_conversation_time_anc || !galaxybuds_bluetooth_version || !galaxybuds_price || !galaxybuds_release_date) {
             console.log("Body:", req.body);
             return res.status(400).json({ ErrorMsg: "Veuillez remplir tous les champs !" });
         }
@@ -46,8 +49,8 @@ export const AddGalaxyBuds = async (req, res) => {
         }
         const pictureUrl = `${supabaseUrl}/storage/v1/object/public/items-pictures/${filename}`;
         const NewGalaxyBuds = await sql `
-      insert into galaxy_buds (galaxybuds_name, product_picture, galaxybuds_mark, galaxybuds_type, galaxybuds_model, galaxybuds_voice_isolation, galaxybuds_active_noise_cancellation, galaxybuds_listening_time, galaxybuds_conversation_time, galaxybuds_listening_time_anc, galaxybuds_conversation_time_anc, galaxybuds_bluetooth_version, galaxybuds_price, galaxybuds_discount, galaxybuds_price_discount)
-      values (${galaxybuds_name}, ${pictureUrl}, ${galaxybuds_mark}, ${galaxybuds_type}, ${galaxybuds_model}, ${galaxybuds_voice_isolation}, ${galaxybuds_active_noise_cancellation}, ${galaxybuds_listening_time}, ${galaxybuds_conversation_time}, ${galaxybuds_listening_time_anc}, ${galaxybuds_conversation_time_anc}, ${galaxybuds_bluetooth_version}, ${Number(galaxybuds_price)}, ${galaxybuds_discount}, ${discountPrice})
+      insert into galaxy_buds (public_id, galaxybuds_name, product_picture, galaxybuds_mark, galaxybuds_type, galaxybuds_model, galaxybuds_voice_isolation, galaxybuds_active_noise_cancellation, galaxybuds_listening_time, galaxybuds_conversation_time, galaxybuds_listening_time_anc, galaxybuds_conversation_time_anc, galaxybuds_bluetooth_version, galaxybuds_price, galaxybuds_discount, galaxybuds_price_discount, galaxybuds_release_date)
+      values (${random_id}, ${galaxybuds_name}, ${pictureUrl}, ${galaxybuds_mark}, ${galaxybuds_type}, ${galaxybuds_model}, ${galaxybuds_voice_isolation}, ${galaxybuds_active_noise_cancellation}, ${galaxybuds_listening_time}, ${galaxybuds_conversation_time}, ${galaxybuds_listening_time_anc}, ${galaxybuds_conversation_time_anc}, ${galaxybuds_bluetooth_version}, ${Number(galaxybuds_price)}, ${galaxybuds_discount}, ${discountPrice}, ${galaxybuds_release_date})
       returning *
     `;
         console.log("new Galaxy Buds :", NewGalaxyBuds);
@@ -76,7 +79,8 @@ export const GetAllBuds = async (req, res) => {
         if (allBuds.length === 0) {
             return res.status(404).json({ ErrorMsg: "Aucun Buds trouvé !" });
         }
-        return res.status(200).json(allBuds);
+        const budsWithoutId = allBuds.map(({ galaxybuds_id, ...rest }) => rest);
+        return res.status(200).json(budsWithoutId);
     }
     catch (error) {
         console.error("GetAllBuds Error:", error);
@@ -86,18 +90,20 @@ export const GetAllBuds = async (req, res) => {
 export const GetBudsById = async (req, res) => {
     try {
         const { id } = req.params;
-        const receivedId = Number(id);
-        if (isNaN(receivedId)) {
-            return res.status(400).json({ ErrorMsg: "Invalid phone ID" });
+        const receivedId = id;
+        if (!receivedId) {
+            return res.status(400).json({ ErrorMsg: "Invalid tablet ID" });
         }
-        const item = await sql `select * from galaxy_buds where galaxybuds_id = ${receivedId}`;
+        const item = await sql `select * from galaxy_buds where public_id = ${receivedId}`;
         if (item.length === 0) {
             return res.status(404).json({ ErrorMsg: "Buds not found" });
         }
-        return res.status(200).json(item[0]);
+        const receivedItem = item[0];
+        const { galaxybuds_id, ...rest } = receivedItem;
+        return res.status(200).json(rest);
     }
     catch (error) {
-        console.error("GetPhoneById Error:", error);
+        console.error("GetBudsById Error:", error);
         return res.status(500).json({ ErrorMsg: "Server error" });
     }
 };

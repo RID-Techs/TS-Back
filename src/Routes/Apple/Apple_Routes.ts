@@ -4,24 +4,23 @@ import { upload } from "../../Middlewares/multer_mdw.js";
 import { AddIpad, GetAllIpads, GetIpadById } from "../../Controllers/Products/Apple/Ipad_Controller.js";
 import { AddMacBook, GetAllMacBooks, GetMacBookById } from "../../Controllers/Products/Apple/MacBook_Controller.js";
 import { AddAirPods, GetAirpodsById, GetAllAirpods } from "../../Controllers/Products/Apple/Airpods_Controller.js";
-import { AddAppleAccessories, GetAllAppleAccessories, GetAppleAccessoriesById } from "../../Controllers/Products/Apple/Apple_Accessories_Controller.js";
+import { AddAppleAccessories, GetAllAppleAccessories, GetAppleAccessoriesById, GetAppleAccessoriesByQuery } from "../../Controllers/Products/Apple/Apple_Accessories_Controller.js";
 import { cookies_Auth } from "../../Middlewares/authCookies.js";
-
 const router = Router();
 
-router.post("/add/phone", upload, cookies_Auth, async (req: Request, res: Response) => {
+router.post("/add/phone", upload, async (req: Request, res: Response) => {
   await AddIphone(req, res);
 });
-router.post("/add/tablet", upload, cookies_Auth, async (req: Request, res: Response) => {
+router.post("/add/tablet", upload, async (req: Request, res: Response) => {
   await AddIpad(req, res);
 });
-router.post("/add/computer", upload, cookies_Auth, async (req: Request, res: Response) => {
+router.post("/add/computer", upload, async (req: Request, res: Response) => {
   await AddMacBook(req, res);
 });
-router.post("/add/airpods", upload, cookies_Auth, async (req: Request, res: Response) => {
+router.post("/add/airpods", upload, async (req: Request, res: Response) => {
   await AddAirPods(req, res);
 });
-router.post("/add/accessories", upload, cookies_Auth, async (req: Request, res: Response) => {
+router.post("/add/accessories", upload, async (req: Request, res: Response) => {
   await AddAppleAccessories(req, res);
 });
 
@@ -54,6 +53,9 @@ router.get("/accessories", async (req: Request, res: Response) => {
 });
 router.get("/accessories/:id", async (req: Request, res: Response) => {
   await GetAppleAccessoriesById(req, res);
+});
+router.get("/queriedaccessories", async (req: Request, res: Response) => {
+  await GetAppleAccessoriesByQuery(req, res);
 });
 
 export default router;

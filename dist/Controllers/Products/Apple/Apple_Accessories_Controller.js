@@ -1,4 +1,5 @@
 import { sql } from "../../../Config/ConnectDB.js";
+import { v4 as uuidv4 } from "uuid";
 import supabaseClient from "../../../Config/SupaConnect.js";
 const MIME_TYPES = {
     "image/png": "png",
@@ -12,9 +13,11 @@ const generateFileName = (originalName, mimetype) => {
 };
 export const AddAppleAccessories = async (req, res) => {
     let filename = "";
+    const random_id = uuidv4();
+    console.log("Random ID:", random_id);
     try {
-        const { apple_accessories_name, apple_accessories_description, apple_accessories_mark, apple_accessories_price, apple_accessories_discount, apple_accessories_price_discount } = req.body;
-        if (!apple_accessories_name || !apple_accessories_description || !apple_accessories_mark || !apple_accessories_price) {
+        const { apple_accessories_name, apple_accessories_description, apple_accessories_mark, apple_accessories_type, apple_accessories_price, apple_accessories_discount, apple_accessories_price_discount, apple_accessories_release_date } = req.body;
+        if (!random_id || !apple_accessories_name || !apple_accessories_description || !apple_accessories_mark || !apple_accessories_type || !apple_accessories_price || !apple_accessories_discount || !apple_accessories_release_date) {
             console.log("Body:", req.body);
             return res.status(400).json({ ErrorMsg: "Veuillez remplir tous les champs !" });
         }
@@ -45,12 +48,12 @@ export const AddAppleAccessories = async (req, res) => {
             throw new Error("SUPABASE_URL is not defined in the environment variables.");
         }
         const pictureUrl = `${supabaseUrl}/storage/v1/object/public/items-pictures/${filename}`;
-        const NewSamsungAccessories = await sql `
-      insert into iaccessories (apple_accessories_name, product_picture, apple_accessories_description, apple_accessories_mark, apple_accessories_price, apple_accessories_discount, apple_accessories_price_discount)
-      values (${apple_accessories_name}, ${pictureUrl}, ${apple_accessories_description}, ${apple_accessories_mark}, ${Number(apple_accessories_price)}, ${apple_accessories_discount}, ${discountPrice})
+        const NewAppleAccessories = await sql `
+      insert into iaccessories (public_id, apple_accessories_name, product_picture, apple_accessories_description, apple_accessories_mark, apple_accessories_type, apple_accessories_price, apple_accessories_discount, apple_accessories_price_discount, apple_accessories_release_date)
+      values (${random_id}, ${apple_accessories_name}, ${pictureUrl}, ${apple_accessories_description}, ${apple_accessories_mark}, ${apple_accessories_type}, ${Number(apple_accessories_price)}, ${apple_accessories_discount}, ${discountPrice}, ${apple_accessories_release_date})
       returning *
     `;
-        console.log("new Apple Accessory :", NewSamsungAccessories);
+        console.log("new Apple Accessory :", NewAppleAccessories);
         return res.status(201).json({ SuccessMsg: "Nouvel accessoire Apple ajouté !" });
     }
     catch (error) {
@@ -76,7 +79,8 @@ export const GetAllAppleAccessories = async (req, res) => {
         if (allAppleAccessories.length === 0) {
             return res.status(404).json({ ErrorMsg: "Aucun Accessoire trouvé !" });
         }
-        return res.status(200).json(allAppleAccessories);
+        const accessoriesWithoutId = allAppleAccessories.map(({ apple_accessories_id, ...rest }) => rest);
+        return res.status(200).json(accessoriesWithoutId);
     }
     catch (error) {
         console.error("GetAllAppleAccessories Error:", error);
@@ -86,15 +90,35 @@ export const GetAllAppleAccessories = async (req, res) => {
 export const GetAppleAccessoriesById = async (req, res) => {
     try {
         const { id } = req.params;
-        const receivedId = Number(id);
-        if (isNaN(receivedId)) {
-            return res.status(400).json({ ErrorMsg: "Invalid item ID" });
+        const receivedId = id;
+        if (!receivedId) {
+            return res.status(400).json({ ErrorMsg: "Invalid MacBook ID" });
         }
-        const item = await sql `select * from iaccessories where apple_accessories_id = ${receivedId}`;
+        const item = await sql `select * from iaccessories where public_id = ${receivedId}`;
         if (item.length === 0) {
             return res.status(404).json({ ErrorMsg: "Apple Accessories not found" });
         }
-        return res.status(200).json(item[0]);
+        const receivedItem = item[0];
+        const { apple_accessories_id, ...rest } = receivedItem;
+        return res.status(200).json(rest);
+    }
+    catch (error) {
+        console.error("GetAppleAccessoriesById Error:", error);
+        return res.status(500).json({ ErrorMsg: "Server error" });
+    }
+};
+export const GetAppleAccessoriesByQuery = async (req, res) => {
+    try {
+        const phonequery = req.query.phonequery;
+        const receivedQuery = typeof phonequery === "string" ? phonequery : "";
+        if (receivedQuery === undefined || receivedQuery === "") {
+            return res.status(400).json({ ErrorMsg: "Query parameter is required" });
+        }
+        const item = await sql `select * from iaccessories where apple_accessories_type ilike ${`%${receivedQuery}%`}`;
+        if (item.length === 0) {
+            return res.status(404).json({ ErrorMsg: "Apple Accessories not found" });
+        }
+        return res.status(200).json(item);
     }
     catch (error) {
         console.error("GetAppleAccessoriesById Error:", error);

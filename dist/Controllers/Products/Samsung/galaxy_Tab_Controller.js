@@ -1,4 +1,5 @@
 import { sql } from "../../../Config/ConnectDB.js";
+import { v4 as uuidv4 } from "uuid";
 import supabaseClient from "../../../Config/SupaConnect.js";
 const MIME_TYPES = {
     "image/png": "png",
@@ -12,9 +13,11 @@ const generateFileName = (originalName, mimetype) => {
 };
 export const AddGalaxyTab = async (req, res) => {
     let filename = "";
+    const random_id = uuidv4();
+    console.log("Random ID:", random_id);
     try {
-        const { tablet_name, tablet_ram, tablet_rom, tablet_screen_type, tablet_curved_screen, tablet_screen_size, tablet_screen_resolution, tablet_chip, tablet_main_camera, tablet_selfie, tablet_physical_sim, tablet_esim, tablet_card_slot, tablet_dex, tablet_fingerprint, tablet_stylus, tablet_battery, tablet_galaxy_ai, tablet_wired_charging, tablet_wireless_charging, tablet_mark, tablet_type, tablet_model, tablet_price, tablet_discount, tablet_price_discount, tablet_available_colors } = req.body;
-        if (!tablet_name || !tablet_ram || !tablet_rom || !tablet_screen_type || !tablet_curved_screen || !tablet_screen_size || !tablet_screen_resolution || !tablet_chip || !tablet_main_camera || !tablet_selfie || !tablet_physical_sim || !tablet_esim || !tablet_card_slot || !tablet_dex || !tablet_fingerprint || !tablet_stylus || !tablet_battery || !tablet_galaxy_ai || !tablet_wired_charging || !tablet_wireless_charging || !tablet_mark || !tablet_type || !tablet_model || !tablet_price || !tablet_available_colors) {
+        const { tablet_name, tablet_ram, tablet_rom, tablet_screen_type, tablet_curved_screen, tablet_screen_size, tablet_screen_resolution, tablet_chip, tablet_rear_camera_captors_number, tablet_rear_camera_captors, tablet_front_camera_captors_number, tablet_front_camera_captors, tablet_recording_video_def, tablet_physical_sim, tablet_esim, tablet_card_slot, tablet_dex, tablet_fingerprint, tablet_stylus, tablet_battery, tablet_galaxy_ai, tablet_wired_charging, tablet_wireless_charging, tablet_mark, tablet_type, tablet_model, tablet_price, tablet_discount, tablet_price_discount, tablet_available_colors, tablet_release_date } = req.body;
+        if (!random_id || !tablet_name || !tablet_ram || !tablet_rom || !tablet_screen_type || !tablet_curved_screen || !tablet_screen_size || !tablet_screen_resolution || !tablet_chip || !tablet_rear_camera_captors_number || !tablet_rear_camera_captors || !tablet_front_camera_captors_number || !tablet_front_camera_captors || !tablet_recording_video_def || !tablet_physical_sim || !tablet_esim || !tablet_card_slot || !tablet_dex || !tablet_fingerprint || !tablet_stylus || !tablet_battery || !tablet_galaxy_ai || !tablet_wired_charging || !tablet_wireless_charging || !tablet_mark || !tablet_type || !tablet_model || !tablet_price || !tablet_available_colors || !tablet_release_date) {
             console.log("Body:", req.body);
             return res.status(400).json({ ErrorMsg: "Veuillez remplir tous les champs !" });
         }
@@ -46,8 +49,8 @@ export const AddGalaxyTab = async (req, res) => {
         }
         const pictureUrl = `${supabaseUrl}/storage/v1/object/public/items-pictures/${filename}`;
         const newGalaxyTab = await sql `
-      insert into galaxy_tabs (tablet_name, product_picture, tablet_ram, tablet_rom, tablet_screen_type, tablet_curved_screen, tablet_screen_size, tablet_screen_resolution, tablet_chip, tablet_main_camera, tablet_selfie, tablet_physical_sim, tablet_esim, tablet_card_slot, tablet_dex, tablet_fingerprint, tablet_stylus, tablet_battery, tablet_galaxy_ai, tablet_wired_charging, tablet_wireless_charging, tablet_mark, tablet_type, tablet_model, tablet_price, tablet_discount, tablet_price_discount, tablet_available_colors)
-      values (${tablet_name}, ${pictureUrl}, ${tablet_ram}, ${tablet_rom}, ${tablet_screen_type}, ${tablet_curved_screen}, ${Number(tablet_screen_size)}, ${tablet_screen_resolution}, ${tablet_chip}, ${Number(tablet_main_camera)}, ${Number(tablet_selfie)}, ${tablet_physical_sim}, ${tablet_esim}, ${tablet_card_slot}, ${tablet_dex}, ${tablet_fingerprint}, ${tablet_stylus}, ${Number(tablet_battery)}, ${tablet_galaxy_ai}, ${tablet_wired_charging}, ${tablet_wireless_charging}, ${tablet_mark}, ${tablet_type}, ${tablet_model}, ${Number(tablet_price)}, ${tablet_discount}, ${discountPrice}, ${tablet_available_colors})
+      insert into galaxy_tabs (public_id, tablet_name, product_picture, tablet_ram, tablet_rom, tablet_screen_type, tablet_curved_screen, tablet_screen_size, tablet_screen_resolution, tablet_chip, tablet_rear_camera_captors_number, tablet_rear_camera_captors,tablet_front_camera_captors_number, tablet_front_camera_captors, tablet_recording_video_def, tablet_physical_sim, tablet_esim, tablet_card_slot, tablet_dex, tablet_fingerprint, tablet_stylus, tablet_battery, tablet_galaxy_ai, tablet_wired_charging, tablet_wireless_charging, tablet_mark, tablet_type, tablet_model, tablet_price, tablet_discount, tablet_price_discount, tablet_available_colors, tablet_release_date)
+      values (${random_id}, ${tablet_name}, ${pictureUrl}, ${tablet_ram}, ${tablet_rom}, ${tablet_screen_type}, ${tablet_curved_screen}, ${Number(tablet_screen_size)}, ${tablet_screen_resolution}, ${tablet_chip}, ${tablet_rear_camera_captors_number}, ${tablet_rear_camera_captors}, ${tablet_front_camera_captors_number}, ${tablet_front_camera_captors}, ${tablet_recording_video_def}, ${tablet_physical_sim}, ${tablet_esim}, ${tablet_card_slot}, ${tablet_dex}, ${tablet_fingerprint}, ${tablet_stylus}, ${Number(tablet_battery)}, ${tablet_galaxy_ai}, ${tablet_wired_charging}, ${tablet_wireless_charging}, ${tablet_mark}, ${tablet_type}, ${tablet_model}, ${Number(tablet_price)}, ${tablet_discount}, ${discountPrice}, ${tablet_available_colors}, ${tablet_release_date})
       returning *
     `;
         console.log("new Samsung :", newGalaxyTab);
@@ -76,7 +79,8 @@ export const GetAllGalaxyTabs = async (req, res) => {
         if (allGalaxyTabs.length === 0) {
             return res.status(404).json({ ErrorMsg: "Aucune Galaxy Tab trouvée !" });
         }
-        return res.status(200).json(allGalaxyTabs);
+        const galaxyTabWithoutId = allGalaxyTabs.map(({ tablet_id, ...rest }) => rest);
+        return res.status(200).json(galaxyTabWithoutId);
     }
     catch (error) {
         console.error("GetAllGalaxyTabs Error:", error);
@@ -86,15 +90,17 @@ export const GetAllGalaxyTabs = async (req, res) => {
 export const GetGalaxyTabById = async (req, res) => {
     try {
         const { id } = req.params;
-        const receivedId = Number(id);
-        if (isNaN(receivedId)) {
-            return res.status(400).json({ ErrorMsg: "Invalid Ipad ID" });
+        const receivedId = id;
+        if (!receivedId) {
+            return res.status(400).json({ ErrorMsg: "Invalid tablet ID" });
         }
-        const phone = await sql `select * from galaxy_tabs where tablet_id = ${receivedId}`;
-        if (phone.length === 0) {
+        const tablet = await sql `select * from galaxy_tabs where public_id = ${receivedId}`;
+        if (tablet.length === 0) {
             return res.status(404).json({ ErrorMsg: "Galaxy Tab not found" });
         }
-        return res.status(200).json(phone[0]);
+        const receivedItem = tablet[0];
+        const { tablet_id, ...rest } = receivedItem;
+        return res.status(200).json(rest);
     }
     catch (error) {
         console.error("GetGalaxyTabById Error:", error);

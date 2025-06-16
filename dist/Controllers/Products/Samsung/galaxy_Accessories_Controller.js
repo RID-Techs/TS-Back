@@ -1,4 +1,5 @@
 import { sql } from "../../../Config/ConnectDB.js";
+import { v4 as uuidv4 } from "uuid";
 import supabaseClient from "../../../Config/SupaConnect.js";
 const MIME_TYPES = {
     "image/png": "png",
@@ -12,9 +13,11 @@ const generateFileName = (originalName, mimetype) => {
 };
 export const AddSamsungAccessories = async (req, res) => {
     let filename = "";
+    const random_id = uuidv4();
+    console.log("Random ID:", random_id);
     try {
-        const { samsung_accessories_name, samsung_accessories_description, samsung_accessories_mark, samsung_accessories_price, samsung_accessories_discount, samsung_accessories_price_discount } = req.body;
-        if (!samsung_accessories_name || !samsung_accessories_description || !samsung_accessories_mark || !samsung_accessories_price) {
+        const { samsung_accessories_name, samsung_accessories_description, samsung_accessories_mark, samsung_accessories_type, samsung_accessories_price, samsung_accessories_discount, samsung_accessories_price_discount, samsung_accessories_release_date } = req.body;
+        if (!random_id || !samsung_accessories_name || !samsung_accessories_description || !samsung_accessories_mark || !samsung_accessories_type || !samsung_accessories_price || !samsung_accessories_release_date) {
             console.log("Body:", req.body);
             return res.status(400).json({ ErrorMsg: "Veuillez remplir tous les champs !" });
         }
@@ -46,8 +49,8 @@ export const AddSamsungAccessories = async (req, res) => {
         }
         const pictureUrl = `${supabaseUrl}/storage/v1/object/public/items-pictures/${filename}`;
         const NewSamsungAccessories = await sql `
-      insert into galaxy_accessories (samsung_accessories_name, product_picture, samsung_accessories_description, samsung_accessories_mark, samsung_accessories_price, samsung_accessories_discount, samsung_accessories_price_discoun)
-      values (${samsung_accessories_name}, ${pictureUrl}, ${samsung_accessories_description}, ${samsung_accessories_mark}, ${Number(samsung_accessories_price)}, ${samsung_accessories_discount}, ${discountPrice})
+      insert into galaxy_accessories (public_id, samsung_accessories_name, product_picture, samsung_accessories_description, samsung_accessories_mark, samsung_accessories_type, samsung_accessories_price, samsung_accessories_discount, samsung_accessories_price_discount, samsung_accessories_release_date)
+      values (${random_id}, ${samsung_accessories_name}, ${pictureUrl}, ${samsung_accessories_description}, ${samsung_accessories_mark}, ${samsung_accessories_type}, ${Number(samsung_accessories_price)}, ${samsung_accessories_discount}, ${discountPrice}, ${samsung_accessories_release_date})
       returning *
     `;
         console.log("new Samsung Accessory :", NewSamsungAccessories);
@@ -77,7 +80,8 @@ export const GetAllSamsungAccessories = async (req, res) => {
         if (allSamsungAccessories.length === 0) {
             return res.status(404).json({ ErrorMsg: "Aucun Accessoire trouvé !" });
         }
-        return res.status(200).json(allSamsungAccessories);
+        const samsungAccessoriesWithoutId = allSamsungAccessories.map(({ samsung_accessories_id, ...rest }) => rest);
+        return res.status(200).json(samsungAccessoriesWithoutId);
     }
     catch (error) {
         console.error("GetAllSamsungAccessories Error:", error);
@@ -87,15 +91,35 @@ export const GetAllSamsungAccessories = async (req, res) => {
 export const GetSamsungAccessoriesById = async (req, res) => {
     try {
         const { id } = req.params;
-        const receivedId = Number(id);
-        if (isNaN(receivedId)) {
-            return res.status(400).json({ ErrorMsg: "Invalid item ID" });
+        const receivedId = id;
+        if (!receivedId) {
+            return res.status(400).json({ ErrorMsg: "Invalid tablet ID" });
         }
-        const item = await sql `select * from galaxy_accessories where samsung_accessories_id = ${receivedId}`;
+        const item = await sql `select * from galaxy_accessories where public_id = ${receivedId}`;
         if (item.length === 0) {
             return res.status(404).json({ ErrorMsg: "Samsung Accessories not found" });
         }
-        return res.status(200).json(item[0]);
+        const receivedItem = item[0];
+        const { samsung_accessories_id, ...rest } = receivedItem;
+        return res.status(200).json(rest);
+    }
+    catch (error) {
+        console.error("GetSamsungAccessoriesById Error:", error);
+        return res.status(500).json({ ErrorMsg: "Server error" });
+    }
+};
+export const GetSamsungAccessoriesByQuery = async (req, res) => {
+    try {
+        const accessoryquery = req.query.accessoryquery;
+        const receivedQuery = typeof accessoryquery === "string" ? accessoryquery : "";
+        if (receivedQuery === undefined || receivedQuery === "") {
+            return res.status(400).json({ ErrorMsg: "Query parameter is required" });
+        }
+        const item = await sql `select * from galaxy_accessories where samsung_accessories_type ilike ${`%${receivedQuery}%`}`;
+        if (item.length === 0) {
+            return res.status(404).json({ ErrorMsg: "Samsung Accessories not found" });
+        }
+        return res.status(200).json(item);
     }
     catch (error) {
         console.error("GetSamsungAccessoriesById Error:", error);
